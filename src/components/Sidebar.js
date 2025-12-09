@@ -14,23 +14,22 @@ import {
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // Used to highlight the active link
+  const location = useLocation();
 
   // State for mobile sidebar visibility
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   
-  // State for managing open submenus (accordions)
+  // State for managing open submenus
   const [activeMenu, setActiveMenu] = useState(null);
 
   const toggleSubMenu = (menuName) => {
     setActiveMenu(activeMenu === menuName ? null : menuName);
   };
 
-  // Helper to handle navigation and close mobile menu
   const handleNavigation = (path) => {
     if (path) {
       navigate(path);
-      setIsMobileOpen(false); // Close sidebar on mobile after clicking
+      setIsMobileOpen(false);
     }
   };
 
@@ -77,7 +76,7 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Toggle Button (Visible only on small screens) */}
+      {/* Mobile Toggle Button */}
       <button 
         onClick={() => setIsMobileOpen(true)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition-colors"
@@ -85,17 +84,17 @@ const Sidebar = () => {
         <FaBars size={24} />
       </button>
 
-      {/* Mobile Overlay (Darkens background when sidebar is open) */}
+      {/* Mobile Overlay (Backdrop) - Increased Z-Index to 90 */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-[90] md:hidden backdrop-blur-sm"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Container - Increased Z-Index to 100 to sit above everything */}
       <div className={`
-        fixed md:static inset-y-0 left-0 z-50
+        fixed md:static inset-y-0 left-0 z-[100]
         w-72 h-full flex flex-col
         glass-panel md:rounded-r-2xl border-r border-white/20
         transition-transform duration-300 ease-in-out
@@ -103,7 +102,7 @@ const Sidebar = () => {
       `}>
         
         {/* Header / Logo Section */}
-        <div className="p-6 flex flex-col items-center border-b border-white/10">
+        <div className="p-6 flex flex-col items-center">
           {/* Mobile Close Button */}
           <button 
             onClick={() => setIsMobileOpen(false)}
@@ -112,22 +111,21 @@ const Sidebar = () => {
             <FaTimes size={24} />
           </button>
 
-          <div className="w-24 h-24 mb-4 bg-white/10 rounded-full flex items-center justify-center shadow-inner overflow-hidden">
-             {/* Ensure logo.png is inside your public folder */}
+          {/* Updated Logo: Removed rounded/bg, made bigger */}
+          <div className="w-36 mb-6 flex items-center justify-center">
              <img 
                src="/logo.png" 
                alt="Healthy Eye Care" 
-               className="w-full h-full object-contain"
-               onError={(e) => {e.target.style.display='none'}} // Fallback if image missing
+               className="w-full h-auto object-contain drop-shadow-lg"
+               onError={(e) => {e.target.style.display='none'}}
              /> 
           </div>
-          <h1 className="text-xl font-bold tracking-wide text-white text-center">Healthy Eye Care</h1>
+          <h1 className="text-xl font-bold tracking-wide text-white text-center">Healthy Eye Clinic</h1>
         </div>
 
         {/* Navigation Menu */}
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 custom-scrollbar">
           {menuStructure.map((item, index) => {
-            // Check if this menu or any of its subitems is active
             const isParentActive = location.pathname === item.path;
             const isChildActive = item.subItems?.some(sub => sub.path === location.pathname);
             const isActive = isParentActive || isChildActive;
@@ -136,7 +134,6 @@ const Sidebar = () => {
 
             return (
               <div key={index} className="flex flex-col">
-                {/* Main Menu Item */}
                 <div 
                   onClick={() => hasSubmenu ? toggleSubMenu(item.name) : handleNavigation(item.path)}
                   className={`
@@ -153,7 +150,6 @@ const Sidebar = () => {
                     </span>
                   </div>
                   
-                  {/* Arrow Icon for Submenus */}
                   {hasSubmenu && (
                     <span className="text-blue-300 text-xs">
                       {isActive || activeMenu === item.name ? <FaChevronDown /> : <FaChevronRight />}
@@ -161,7 +157,7 @@ const Sidebar = () => {
                   )}
                 </div>
 
-                {/* Submenu Items (Accordion) */}
+                {/* Submenu Items */}
                 <div className={`
                   overflow-hidden transition-all duration-300 ease-in-out
                   ${(activeMenu === item.name || isChildActive) ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'}
@@ -191,7 +187,7 @@ const Sidebar = () => {
 
         {/* Footer Area */}
         <div className="p-4 text-center text-xs text-blue-300/60 border-t border-white/10">
-          v1.0.0 Admin Panel
+          &copy; {new Date().getFullYear()} Healthy Eye Clinic. All rights reserved.
         </div>
       </div>
     </>

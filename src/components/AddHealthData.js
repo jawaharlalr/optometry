@@ -43,7 +43,7 @@ const InputSection = ({ label, icon, items, onAdd, onChange, onRemove, placehold
     <button
       type="button"
       onClick={onAdd}
-      className="mt-4 bg-green-600 hover:bg-green-500 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-green-900/20"
+      className="mt-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-blue-900/20"
     >
       <FaPlus /> Add More
     </button>

@@ -363,7 +363,7 @@ const AddBill = () => {
         <div className="xl:hidden space-y-4">
            {generalDataRows.map((row, index) => (
              <div key={row.id} className="bg-white/5 p-4 rounded-xl space-y-3 relative border border-white/10">
-               <div className="absolute top-2 right-2 text-xs text-blue-500">#{index+1}</div>
+               <div className="absolute top-2 right-2 text-xs text-blue-500">{index+1}</div>
                <TableSelect value={row.eye} options={options.eye} onChange={(e) => handleRowChange('general', row.id, 'eye', e.target.value)} />
                <TableSelect value={row.complaint} options={options.complaint} onChange={(e) => handleRowChange('general', row.id, 'complaint', e.target.value)} />
                <TableInput value={row.others} placeholder="Others" onChange={(e) => handleRowChange('general', row.id, 'others', e.target.value)} />
@@ -443,7 +443,7 @@ const AddBill = () => {
         <div className="space-y-3">
           {medicationRows.map((row, index) => (
             <div key={row.id} className="flex gap-2 items-center">
-              <span className="text-blue-500/50 text-xs w-6">#{index+1}</span>
+              <span className="text-blue-500/50 text-xs w-6">{index+1}</span>
               <div className="flex-1"><TableInput value={row.medication} placeholder="Enter Medication" onChange={(e) => handleRowChange('medication', row.id, 'medication', e.target.value)} /></div>
               <button onClick={() => handleRemoveRow('medication', row.id)} className="bg-red-500/20 text-red-300 p-2 rounded"><FaTrash size={12}/></button>
             </div>

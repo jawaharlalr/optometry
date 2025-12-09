@@ -142,7 +142,7 @@ const Dashboard = () => {
           </div>
           <div>
             <p className="text-sm font-medium text-white">Dr. Nandhini</p>
-            <p className="text-[10px] text-blue-200 leading-none">Healthy Eye Care</p>
+            <p className="text-[10px] text-blue-200 leading-none">Healthy Eye Clinic</p>
           </div>
         </div>
       </header>
