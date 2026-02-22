@@ -14,15 +14,17 @@ import {
   FaBaby
 } from 'react-icons/fa';
 
-// Import New Table Components
+// Import Table Components
 import GeneralTable from './tables/GeneralTable';
 import HealthTable from './tables/HealthTable';
 import OcularTable from './tables/OcularTable';
 import VisualTable from './tables/VisualTable';
+import CoverTestEOMTable from './tables/CoverTestEOMTable';
+import PupilTable from './tables/PupilTable';
 import { TableInput } from './common/TableComponents';
 
 const AddBill = () => {
-  // ... Search State (unchanged)
+  // ... Search State
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -30,16 +32,17 @@ const AddBill = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // ... Option State (unchanged)
+  // ... Option State
   const [options, setOptions] = useState({
-    eye: [], complaint: [], glass: [], duration: [], distance: [], progression: [], association: [], conditions: [], lensType: []
+    eye: ['OD', 'OS', 'OU'], // Added OD/OS/OU for standard terminology
+    complaint: [], glass: [], duration: [], distance: [], progression: [], association: [], conditions: [], lensType: []
   });
 
-  // ... Harvest Effect (unchanged) ...
+  // ... Harvest Effect
   useEffect(() => {
     const harvestOptions = async () => {
       try {
-        const sets = { eye: new Set(), complaint: new Set(), glass: new Set(), duration: new Set(), distance: new Set(), progression: new Set(), association: new Set(), conditions: new Set(), lensType: new Set() };
+        const sets = { eye: new Set(['OD', 'OS', 'OU']), complaint: new Set(), glass: new Set(), duration: new Set(), distance: new Set(), progression: new Set(), association: new Set(), conditions: new Set(), lensType: new Set() };
         
         const genSnapshot = await getDocs(collection(db, "general_data"));
         genSnapshot.forEach(doc => {
@@ -70,13 +73,23 @@ const AddBill = () => {
   const [birthRows, setBirthRows] = useState([{ id: 1, birthHistory: '', allergies: '' }]);
   
   // --- VISUAL ACUITY STATES ---
-  const [rxRows, setRxRows] = useState([{ id: 1, date: '', eye: '', sph: '', cyl: '', axis: '', add: '', prism: '', base: '', lens: '', status: '' }]); // Prev. Glass
+  const [rxRows, setRxRows] = useState([{ id: 1, date: '', eye: '', sph: '', cyl: '', axis: '', add: '', prism: '', base: '', lens: '', status: '' }]); 
   const [vaRows, setVaRows] = useState([{ id: 1, eye: '', withoutGlass: '', withGlass: '', withPh: '', contactLens: '' }]);
   const [refRows, setRefRows] = useState([{ id: 1, eye: '', retinoscopy: '', dsph: '', dcyl: '', axis: '' }]);
   const [accRows, setAccRows] = useState([{ id: 1, eye: '', sph: '', cyl: '', axis: '', distVision: '', add: '', nearVision: '', comments: '' }]);
-  const [gpRows, setGpRows] = useState([{ id: 1, eye: '', sph: '', cyl: '', axis: '', add: '' }]); // New Glass Rx
+  const [gpRows, setGpRows] = useState([{ id: 1, eye: '', sph: '', cyl: '', axis: '', add: '' }]); 
 
-  // ... Search Logic (unchanged) ...
+  // --- COVER TEST / EOM STATES ---
+  const [ctRows, setCtRows] = useState([{ id: 1, hirschberg: '', ctDistance: '', ctNear: '' }]);
+  const [eomRows, setEomRows] = useState([{ id: 1, od: '', os: '' }]);
+
+  // --- PUPIL STATE (UPDATED TO SHOW OD & OS INITIALLY) ---
+  const [pupilRows, setPupilRows] = useState([
+    { id: 1, eye: 'OD', size: '', shape: '', light: '', near: '', rapd: '' },
+    { id: 2, eye: 'OS', size: '', shape: '', light: '', near: '', rapd: '' }
+  ]);
+
+  // ... Search Logic
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchTerm.length > 1 && !selectedPatient) {
@@ -132,6 +145,13 @@ const AddBill = () => {
     if(type === 'ref') update(refRows, setRefRows, { eye: '', retinoscopy: '', dsph: '', dcyl: '', axis: '' });
     if(type === 'acc') update(accRows, setAccRows, { eye: '', sph: '', cyl: '', axis: '', distVision: '', add: '', nearVision: '', comments: '' });
     if(type === 'gp') update(gpRows, setGpRows, { eye: '', sph: '', cyl: '', axis: '', add: '' });
+
+    // Cover Test / EOM Sections
+    if(type === 'ct') update(ctRows, setCtRows, { hirschberg: '', ctDistance: '', ctNear: '' });
+    if(type === 'eom') update(eomRows, setEomRows, { od: '', os: '' });
+
+    // Pupil Section
+    if(type === 'pupil') update(pupilRows, setPupilRows, { eye: '', size: '', shape: '', light: '', near: '', rapd: '' });
   };
 
   const handleSave = async () => {
@@ -146,12 +166,19 @@ const AddBill = () => {
         medications: medicationRows,
         birthHistory: birthRows,
         
-        // Save All Visual Data
+        // Save Visual Data
         previousGlass: rxRows,
         visualAcuity: vaRows,
         refraction: refRows,
         acceptance: accRows,
-        glassPrescription: gpRows, // Saved new table
+        glassPrescription: gpRows,
+        
+        // Save Cover Test / EOM 
+        coverTest: ctRows,
+        ocularMovement: eomRows,
+
+        // Save Pupil
+        pupil: pupilRows,
         
         createdAt: serverTimestamp()
       });
@@ -164,7 +191,7 @@ const AddBill = () => {
   return (
     <div className="w-full h-full p-4 overflow-y-auto text-white md:p-8 custom-scrollbar">
       
-      {/* Header & Search ... (Same as before) */}
+      {/* Header & Search */}
       <div className="flex items-center gap-4 mb-8">
         <div className="p-3 text-white bg-blue-500 shadow-lg rounded-xl shadow-blue-500/20"><FaFileInvoiceDollar size={24} /></div>
         <div><h1 className="text-2xl font-bold md:text-3xl">Add Medical Bill</h1><p className="text-sm text-blue-200">Search patient and enter details.</p></div>
@@ -229,57 +256,49 @@ const AddBill = () => {
 
       <div className="p-6 mb-8 glass-panel rounded-2xl">
          <h2 className="flex items-center gap-2 pb-2 mb-4 text-xl font-bold border-b border-white/10"><FaPills className="text-blue-400"/> Current Medications</h2>
-         {medicationRows.map(r => (
-             <div key={r.id} className="flex items-center gap-2 p-2 mb-3 border bg-white/5 rounded-xl border-white/5">
-                 <span className="px-2 text-xs text-blue-500/50">#{medicationRows.indexOf(r)+1}</span>
+         {medicationRows.map((r, index) => (
+             <div key={r.id} className="flex items-center gap-3 p-2 mb-3 border bg-white/5 rounded-xl border-white/5">
+                 <div className="flex items-center justify-center w-8 h-8 ml-1 font-bold text-blue-300 rounded-lg bg-black/20">{index + 1}</div>
                  <div className="flex-1"><TableInput value={r.medication} onChange={e => handleRowAction('medication','update',r.id,'medication',e.target.value)} placeholder="Enter Medication Name"/></div>
                  <button onClick={() => handleRowAction('medication','remove',r.id)} className="p-3 text-red-400 transition-colors rounded-lg bg-red-500/10 hover:bg-red-500 hover:text-white"><FaTrash size={14}/></button>
              </div>
          ))}
-         <button onClick={() => handleRowAction('medication','add')} className="flex items-center gap-2 mt-2 text-sm text-blue-300 hover:text-white"><FaPlus className="p-1 text-lg rounded bg-blue-500/20"/> Add Row</button>
+         <button onClick={() => handleRowAction('medication','add')} className="flex items-center gap-2 mt-2 text-sm text-blue-300 hover:text-white"><FaPlus className="p-1 text-lg rounded bg-blue-500/20"/> Add Medication</button>
       </div>
 
       <div className="p-6 mb-8 glass-panel rounded-2xl">
-         <h2 className="flex items-center gap-2 pb-2 mb-4 text-xl font-bold border-b border-white/10"><FaBaby className="text-blue-400"/> Birth History</h2>
-         {birthRows.map(r => (
-             <div key={r.id} className="relative grid grid-cols-1 gap-4 p-4 mb-4 border md:grid-cols-2 bg-white/5 rounded-xl border-white/10">
-                 <button onClick={() => handleRowAction('birth','remove',r.id)} className="absolute text-red-400 top-2 right-2 hover:text-white"><FaTrash size={12}/></button>
+         <h2 className="flex items-center gap-2 pb-2 mb-4 text-xl font-bold border-b border-white/10"><FaBaby className="text-blue-400"/> Birth History & Allergies</h2>
+         {birthRows.map((r, index) => (
+             <div key={r.id} className="relative grid grid-cols-1 gap-4 p-4 pt-10 mb-4 border md:grid-cols-2 bg-white/5 rounded-xl border-white/10">
+                 <div className="absolute top-0 left-0 px-3 py-1 text-xs font-bold text-blue-200 rounded-br-lg rounded-tl-xl bg-blue-900/50">S.No: {index + 1}</div>
+                 <button onClick={() => handleRowAction('birth','remove',r.id)} className="absolute p-2 text-red-400 transition-colors rounded-lg top-2 right-2 hover:text-white hover:bg-red-500/20"><FaTrash size={14}/></button>
                  <div><label className="block mb-1 text-xs text-blue-300">Birth History</label><TableInput value={r.birthHistory} onChange={e => handleRowAction('birth','update',r.id,'birthHistory',e.target.value)} placeholder="History details..."/></div>
                  <div><label className="block mb-1 text-xs text-blue-300">Allergies</label><TableInput value={r.allergies} onChange={e => handleRowAction('birth','update',r.id,'allergies',e.target.value)} placeholder="List allergies..."/></div>
              </div>
          ))}
-         <button onClick={() => handleRowAction('birth','add')} className="flex items-center gap-2 text-sm text-blue-300 hover:text-white"><FaPlus className="p-1 text-lg rounded bg-blue-500/20"/> Add Row</button>
+         <button onClick={() => handleRowAction('birth','add')} className="flex items-center gap-2 mt-2 text-sm text-blue-300 hover:text-white"><FaPlus className="p-1 text-lg rounded bg-blue-500/20"/> Add Birth History Row</button>
       </div>
 
-      {/* --- Pass ALL Visual Props to VisualTable --- */}
       <VisualTable 
-        // 1. Previous Glass
-        rxRows={rxRows}
-        onRxChange={(id, f, v) => handleRowAction('rx', 'update', id, f, v)}
-        onRxAdd={() => handleRowAction('rx', 'add')}
-        onRxRemove={(id) => handleRowAction('rx', 'remove', id)}
-        // 2. Visual Acuity
-        vaRows={vaRows} 
-        onVaChange={(id, f, v) => handleRowAction('va', 'update', id, f, v)}
-        onVaAdd={() => handleRowAction('va', 'add')}
-        onVaRemove={(id) => handleRowAction('va', 'remove', id)}
-        // 3. Refraction
-        refRows={refRows}
-        onRefChange={(id, f, v) => handleRowAction('ref', 'update', id, f, v)}
-        onRefAdd={() => handleRowAction('ref', 'add')}
-        onRefRemove={(id) => handleRowAction('ref', 'remove', id)}
-        // 4. Acceptance
-        accRows={accRows}
-        onAccChange={(id, f, v) => handleRowAction('acc', 'update', id, f, v)}
-        onAccAdd={() => handleRowAction('acc', 'add')}
-        onAccRemove={(id) => handleRowAction('acc', 'remove', id)}
-        // 5. Glass Prescription (NEW)
-        gpRows={gpRows}
-        onGpChange={(id, f, v) => handleRowAction('gp', 'update', id, f, v)}
-        onGpAdd={() => handleRowAction('gp', 'add')}
-        onGpRemove={(id) => handleRowAction('gp', 'remove', id)}
-        
+        rxRows={rxRows} onRxChange={(id, f, v) => handleRowAction('rx', 'update', id, f, v)} onRxAdd={() => handleRowAction('rx', 'add')} onRxRemove={(id) => handleRowAction('rx', 'remove', id)}
+        vaRows={vaRows} onVaChange={(id, f, v) => handleRowAction('va', 'update', id, f, v)} onVaAdd={() => handleRowAction('va', 'add')} onVaRemove={(id) => handleRowAction('va', 'remove', id)}
+        refRows={refRows} onRefChange={(id, f, v) => handleRowAction('ref', 'update', id, f, v)} onRefAdd={() => handleRowAction('ref', 'add')} onRefRemove={(id) => handleRowAction('ref', 'remove', id)}
+        accRows={accRows} onAccChange={(id, f, v) => handleRowAction('acc', 'update', id, f, v)} onAccAdd={() => handleRowAction('acc', 'add')} onAccRemove={(id) => handleRowAction('acc', 'remove', id)}
+        gpRows={gpRows} onGpChange={(id, f, v) => handleRowAction('gp', 'update', id, f, v)} onGpAdd={() => handleRowAction('gp', 'add')} onGpRemove={(id) => handleRowAction('gp', 'remove', id)}
         options={options} 
+      />
+
+      <CoverTestEOMTable 
+        ctRows={ctRows} onCtChange={(id, f, v) => handleRowAction('ct', 'update', id, f, v)} onCtAdd={() => handleRowAction('ct', 'add')} onCtRemove={(id) => handleRowAction('ct', 'remove', id)}
+        eomRows={eomRows} onEomChange={(id, f, v) => handleRowAction('eom', 'update', id, f, v)} onEomAdd={() => handleRowAction('eom', 'add')} onEomRemove={(id) => handleRowAction('eom', 'remove', id)}
+      />
+
+      <PupilTable 
+        pupilRows={pupilRows} 
+        onPupilChange={(id, f, v) => handleRowAction('pupil', 'update', id, f, v)} 
+        onPupilAdd={() => handleRowAction('pupil', 'add')} 
+        onPupilRemove={(id) => handleRowAction('pupil', 'remove', id)} 
+        options={options}
       />
 
       <div className="flex justify-end pt-4 pb-20">

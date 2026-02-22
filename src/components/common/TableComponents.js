@@ -36,3 +36,10 @@ export const TableInput = ({ value, onChange, placeholder = '', type = "text" })
     />
   );
 };
+
+// --- NEW: Reusable Serial Number Component ---
+export const TableSNo = ({ index }) => (
+  <div className="flex items-center justify-center w-full min-h-[42px] text-blue-300 font-medium">
+    {index + 1}
+  </div>
+);

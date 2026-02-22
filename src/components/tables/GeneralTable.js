@@ -33,19 +33,25 @@ const GeneralTable = ({ rows, options, onRowChange, onAdd, onRemove }) => {
       </div>
 
       {/* Mobile */}
-      <div className="space-y-4 xl:hidden">
+      <div className="space-y-3 xl:hidden">
          {rows.map((row, index) => (
-           <div key={row.id} className="relative p-4 space-y-3 border bg-white/5 rounded-xl border-white/10">
-             <div className="absolute text-xs text-blue-500 top-2 right-2">#{index+1}</div>
-             <TableSelect value={row.eye} options={options.eye} onChange={(e) => onRowChange(row.id, 'eye', e.target.value)} />
-             <TableSelect value={row.complaint} options={options.complaint} onChange={(e) => onRowChange(row.id, 'complaint', e.target.value)} />
-             <TableInput value={row.others} placeholder="Others" onChange={(e) => onRowChange(row.id, 'others', e.target.value)} />
-             <button onClick={() => onRemove(row.id)} className="w-full p-2 text-sm text-red-300 rounded bg-red-500/20"><FaTrash className="inline mr-2"/> Remove</button>
+           <div key={row.id} className="relative grid grid-cols-2 gap-3 p-3 border bg-white/5 border-white/10 rounded-xl">
+             <button onClick={() => onRemove(row.id)} className="absolute text-red-400 top-2 right-2"><FaTrash size={12}/></button>
+             <div className="col-span-2 text-xs font-bold text-blue-400">General Data #{index+1}</div>
+             
+             <div><label className="text-[10px] text-blue-300 block">Eye</label><TableSelect value={row.eye} options={options.eye} onChange={(e) => onRowChange(row.id, 'eye', e.target.value)} /></div>
+             <div><label className="text-[10px] text-blue-300 block">Chief Complaint</label><TableSelect value={row.complaint} options={options.complaint} onChange={(e) => onRowChange(row.id, 'complaint', e.target.value)} /></div>
+             <div><label className="text-[10px] text-blue-300 block">Glass</label><TableSelect value={row.glass} options={options.glass} onChange={(e) => onRowChange(row.id, 'glass', e.target.value)} /></div>
+             <div><label className="text-[10px] text-blue-300 block">Duration</label><TableSelect value={row.duration} options={options.duration} onChange={(e) => onRowChange(row.id, 'duration', e.target.value)} /></div>
+             <div><label className="text-[10px] text-blue-300 block">Distance</label><TableSelect value={row.distance} options={options.distance} onChange={(e) => onRowChange(row.id, 'distance', e.target.value)} /></div>
+             <div><label className="text-[10px] text-blue-300 block">Progression</label><TableSelect value={row.progression} options={options.progression} onChange={(e) => onRowChange(row.id, 'progression', e.target.value)} /></div>
+             <div className="col-span-2"><label className="text-[10px] text-blue-300 block">Association</label><TableSelect value={row.association} options={options.association} onChange={(e) => onRowChange(row.id, 'association', e.target.value)} /></div>
+             <div className="col-span-2"><label className="text-[10px] text-blue-300 block">Others</label><TableInput value={row.others} placeholder="Details" onChange={(e) => onRowChange(row.id, 'others', e.target.value)} /></div>
            </div>
          ))}
       </div>
       
-      <button onClick={onAdd} className="flex items-center gap-2 mt-4 text-sm text-blue-300 hover:text-white"><FaPlus className="p-1 text-lg rounded bg-blue-500/20"/> Add Row</button>
+      <button onClick={onAdd} className="flex items-center gap-2 mt-3 text-xs text-blue-300 hover:text-white"><FaPlus className="p-1 text-lg rounded bg-blue-500/20"/> Add Row</button>
     </div>
   );
 };

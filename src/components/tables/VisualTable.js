@@ -11,7 +11,7 @@ const VisualTable = ({
   refRows = [], onRefChange, onRefAdd, onRefRemove,
   // Acceptance (accRows)
   accRows = [], onAccChange, onAccAdd, onAccRemove,
-  // Glass Prescription (gpRows) - NEW
+  // Glass Prescription (gpRows)
   gpRows = [], onGpChange, onGpAdd, onGpRemove,
   
   options = {} 
@@ -28,11 +28,12 @@ const VisualTable = ({
         <div className="hidden overflow-x-auto xl:block custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="text-xs text-blue-200 uppercase bg-blue-900/40">
-              <tr>{['Date', 'Eye', 'Sph', 'Cyl', 'Axis', 'Add', 'Prism', 'Base', 'Lens', 'Status', 'Remove'].map(h => <th key={h} className="p-3 whitespace-nowrap">{h}</th>)}</tr>
+              <tr>{['S.No', 'Date', 'Eye', 'Sph', 'Cyl', 'Axis', 'Add', 'Prism', 'Base', 'Lens', 'Status', 'Remove'].map(h => <th key={h} className="p-3 whitespace-nowrap">{h}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {rxRows.map((row) => (
+              {rxRows.map((row, idx) => (
                 <tr key={row.id} className="hover:bg-white/5">
+                  <td className="p-2 text-center text-blue-300">{idx + 1}</td>
                   <td className="p-2"><TableInput type="date" value={row.date} onChange={(e) => onRxChange(row.id, 'date', e.target.value)} /></td>
                   <td className="p-2"><TableSelect value={row.eye} options={options.eye} onChange={(e) => onRxChange(row.id, 'eye', e.target.value)} /></td>
                   <td className="p-2"><TableInput value={row.sph} placeholder="Sph" onChange={(e) => onRxChange(row.id, 'sph', e.target.value)} /></td>
@@ -155,11 +156,12 @@ const VisualTable = ({
         <div className="hidden overflow-x-auto xl:block custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="text-xs text-blue-200 uppercase bg-blue-900/40">
-              <tr>{['Eye', 'Sph', 'Cyl', 'Axis', 'Dist Vision', 'Add', 'Near Vision', 'Comments', 'Remove'].map(h => <th key={h} className="p-3 whitespace-nowrap">{h}</th>)}</tr>
+              <tr>{['S.No', 'Eye', 'Sph', 'Cyl', 'Axis', 'Dist Vision', 'Add', 'Near Vision', 'Comments', 'Remove'].map(h => <th key={h} className="p-3 whitespace-nowrap">{h}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {accRows.map((row) => (
+              {accRows.map((row, idx) => (
                 <tr key={row.id} className="hover:bg-white/5">
+                  <td className="p-2 text-center text-blue-300">{idx + 1}</td>
                   <td className="p-2"><TableSelect value={row.eye} options={options.eye} onChange={(e) => onAccChange(row.id, 'eye', e.target.value)} /></td>
                   <td className="p-2"><TableInput value={row.sph} placeholder="Sph" onChange={(e) => onAccChange(row.id, 'sph', e.target.value)} /></td>
                   <td className="p-2"><TableInput value={row.cyl} placeholder="Cyl" onChange={(e) => onAccChange(row.id, 'cyl', e.target.value)} /></td>
@@ -193,7 +195,7 @@ const VisualTable = ({
         <button onClick={onAccAdd} className="flex items-center gap-2 mt-3 text-xs text-blue-300 hover:text-white"><FaPlus className="p-1 text-lg rounded bg-blue-500/20"/> Add Acceptance Row</button>
       </div>
 
-      {/* --- SECTION 5: GLASS PRESCRIPTION (NEW) --- */}
+      {/* --- SECTION 5: GLASS PRESCRIPTION --- */}
       <div>
         <h3 className="flex items-center gap-2 pb-2 mb-3 text-lg font-bold text-blue-300 border-b border-white/10">
           <FaFilePrescription /> Glass Prescription
@@ -201,11 +203,12 @@ const VisualTable = ({
         <div className="hidden overflow-x-auto xl:block custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="text-xs text-blue-200 uppercase bg-blue-900/40">
-              <tr>{['Eye', 'Sph', 'Cyl', 'Axis', 'Add', 'Remove'].map(h => <th key={h} className="p-3 whitespace-nowrap">{h}</th>)}</tr>
+              <tr>{['S.No', 'Eye', 'Sph', 'Cyl', 'Axis', 'Add', 'Remove'].map(h => <th key={h} className="p-3 whitespace-nowrap">{h}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {gpRows.map((row) => (
+              {gpRows.map((row, idx) => (
                 <tr key={row.id} className="hover:bg-white/5">
+                  <td className="p-2 text-center text-blue-300">{idx + 1}</td>
                   <td className="p-2"><TableSelect value={row.eye} options={options.eye} onChange={(e) => onGpChange(row.id, 'eye', e.target.value)} /></td>
                   <td className="p-2"><TableInput value={row.sph} placeholder="Sph" onChange={(e) => onGpChange(row.id, 'sph', e.target.value)} /></td>
                   <td className="p-2"><TableInput value={row.cyl} placeholder="Cyl" onChange={(e) => onGpChange(row.id, 'cyl', e.target.value)} /></td>
