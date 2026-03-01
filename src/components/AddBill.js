@@ -21,6 +21,9 @@ import OcularTable from './tables/OcularTable';
 import VisualTable from './tables/VisualTable';
 import CoverTestEOMTable from './tables/CoverTestEOMTable';
 import PupilTable from './tables/PupilTable';
+import LacrimalTable from './tables/LacrimalTable';
+import LidLashConjunctivaTable from './tables/LidLashConjunctivaTable';
+import CorneaACTable from './tables/CorneaACTable'; // <-- NEW IMPORT
 import { TableInput } from './common/TableComponents';
 
 const AddBill = () => {
@@ -34,7 +37,7 @@ const AddBill = () => {
 
   // ... Option State
   const [options, setOptions] = useState({
-    eye: ['OD', 'OS', 'OU'], // Added OD/OS/OU for standard terminology
+    eye: ['OD', 'OS', 'OU'], 
     complaint: [], glass: [], duration: [], distance: [], progression: [], association: [], conditions: [], lensType: []
   });
 
@@ -72,22 +75,30 @@ const AddBill = () => {
   const [medicationRows, setMedicationRows] = useState([{ id: 1, medication: '' }]);
   const [birthRows, setBirthRows] = useState([{ id: 1, birthHistory: '', allergies: '' }]);
   
-  // --- VISUAL ACUITY STATES ---
   const [rxRows, setRxRows] = useState([{ id: 1, date: '', eye: '', sph: '', cyl: '', axis: '', add: '', prism: '', base: '', lens: '', status: '' }]); 
   const [vaRows, setVaRows] = useState([{ id: 1, eye: '', withoutGlass: '', withGlass: '', withPh: '', contactLens: '' }]);
   const [refRows, setRefRows] = useState([{ id: 1, eye: '', retinoscopy: '', dsph: '', dcyl: '', axis: '' }]);
   const [accRows, setAccRows] = useState([{ id: 1, eye: '', sph: '', cyl: '', axis: '', distVision: '', add: '', nearVision: '', comments: '' }]);
   const [gpRows, setGpRows] = useState([{ id: 1, eye: '', sph: '', cyl: '', axis: '', add: '' }]); 
-
-  // --- COVER TEST / EOM STATES ---
   const [ctRows, setCtRows] = useState([{ id: 1, hirschberg: '', ctDistance: '', ctNear: '' }]);
   const [eomRows, setEomRows] = useState([{ id: 1, od: '', os: '' }]);
+  const [pupilRows, setPupilRows] = useState([{ id: 1, eye: 'OD', size: '', shape: '', light: '', near: '', rapd: '' }, { id: 2, eye: 'OS', size: '', shape: '', light: '', near: '', rapd: '' }]);
+  const [lacrimal, setLacrimal] = useState({ roplasOd: '', roplasOs: '' });
 
-  // --- PUPIL STATE (UPDATED TO SHOW OD & OS INITIALLY) ---
-  const [pupilRows, setPupilRows] = useState([
-    { id: 1, eye: 'OD', size: '', shape: '', light: '', near: '', rapd: '' },
-    { id: 2, eye: 'OS', size: '', shape: '', light: '', near: '', rapd: '' }
-  ]);
+  const [lidLash, setLidLash] = useState({
+    lidsOd: 'Normal', lidsOs: 'Normal',
+    lashOd: 'Normal', lashOs: 'Normal',
+    conjunctivaOd: 'Normal', conjunctivaOs: 'Normal'
+  });
+
+  // --- CORNEA / AC STATE (NEW) ---
+  const [corneaAC, setCorneaAC] = useState({
+    scleraOd: 'Normal', scleraOdText: '', scleraOs: 'Normal', scleraOsText: '',
+    corneaOd: 'Normal', corneaOdText: '', corneaOs: 'Normal', corneaOsText: '',
+    acDepthOd: 'Normal', acDepthOdText: '', acDepthOs: 'Normal', acDepthOsText: '',
+    vonHerickOd: '', vonHerickOdText: '', vonHerickOs: '', vonHerickOsText: '', // No 'Normal' default
+    tmPigmentOd: 'Normal', tmPigmentOdText: '', tmPigmentOs: 'Normal', tmPigmentOsText: ''
+  });
 
   // ... Search Logic
   useEffect(() => {
@@ -113,7 +124,6 @@ const AddBill = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, selectedPatient]);
 
-  // --- Handlers ---
   const handleSelectPatient = async (patient) => {
     setSelectedPatient(patient);
     setSearchTerm('');
@@ -124,6 +134,17 @@ const AddBill = () => {
     setSelectedPatient(null);
     setSearchTerm('');
     setSearchResults([]);
+    
+    // Optional: Reset fixed forms
+    setLacrimal({ roplasOd: '', roplasOs: '' });
+    setLidLash({ lidsOd: 'Normal', lidsOs: 'Normal', lashOd: 'Normal', lashOs: 'Normal', conjunctivaOd: 'Normal', conjunctivaOs: 'Normal' });
+    setCorneaAC({
+      scleraOd: 'Normal', scleraOdText: '', scleraOs: 'Normal', scleraOsText: '',
+      corneaOd: 'Normal', corneaOdText: '', corneaOs: 'Normal', corneaOsText: '',
+      acDepthOd: 'Normal', acDepthOdText: '', acDepthOs: 'Normal', acDepthOsText: '',
+      vonHerickOd: '', vonHerickOdText: '', vonHerickOs: '', vonHerickOsText: '',
+      tmPigmentOd: 'Normal', tmPigmentOdText: '', tmPigmentOs: 'Normal', tmPigmentOsText: ''
+    });
   };
 
   const handleRowAction = (type, action, id, field, value) => {
@@ -139,19 +160,27 @@ const AddBill = () => {
     if(type === 'medication') update(medicationRows, setMedicationRows, { medication: '' });
     if(type === 'birth') update(birthRows, setBirthRows, { birthHistory: '', allergies: '' });
     
-    // Visual Sections
     if(type === 'rx') update(rxRows, setRxRows, { date: '', eye: '', sph: '', cyl: '', axis: '', add: '', prism: '', base: '', lens: '', status: '' });
     if(type === 'va') update(vaRows, setVaRows, { eye: '', withoutGlass: '', withGlass: '', withPh: '', contactLens: '' });
     if(type === 'ref') update(refRows, setRefRows, { eye: '', retinoscopy: '', dsph: '', dcyl: '', axis: '' });
     if(type === 'acc') update(accRows, setAccRows, { eye: '', sph: '', cyl: '', axis: '', distVision: '', add: '', nearVision: '', comments: '' });
     if(type === 'gp') update(gpRows, setGpRows, { eye: '', sph: '', cyl: '', axis: '', add: '' });
 
-    // Cover Test / EOM Sections
     if(type === 'ct') update(ctRows, setCtRows, { hirschberg: '', ctDistance: '', ctNear: '' });
     if(type === 'eom') update(eomRows, setEomRows, { od: '', os: '' });
-
-    // Pupil Section
     if(type === 'pupil') update(pupilRows, setPupilRows, { eye: '', size: '', shape: '', light: '', near: '', rapd: '' });
+  };
+
+  const handleLacrimalChange = (field, value) => {
+    setLacrimal(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLidLashChange = (field, value) => {
+    setLidLash(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCorneaACChange = (field, value) => {
+    setCorneaAC(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
@@ -166,19 +195,18 @@ const AddBill = () => {
         medications: medicationRows,
         birthHistory: birthRows,
         
-        // Save Visual Data
         previousGlass: rxRows,
         visualAcuity: vaRows,
         refraction: refRows,
         acceptance: accRows,
         glassPrescription: gpRows,
         
-        // Save Cover Test / EOM 
         coverTest: ctRows,
         ocularMovement: eomRows,
-
-        // Save Pupil
         pupil: pupilRows,
+        lacrimalWorkup: lacrimal,
+        lidLashConjunctiva: lidLash,
+        corneaAnteriorChamber: corneaAC, // Saved new table
         
         createdAt: serverTimestamp()
       });
@@ -233,26 +261,9 @@ const AddBill = () => {
          )}
       </div>
 
-      <GeneralTable 
-        rows={generalDataRows} options={options} 
-        onRowChange={(id, f, v) => handleRowAction('general', 'update', id, f, v)}
-        onAdd={() => handleRowAction('general', 'add')}
-        onRemove={(id) => handleRowAction('general', 'remove', id)}
-      />
-
-      <HealthTable 
-        rows={healthConditionRows} options={options} 
-        onRowChange={(id, f, v) => handleRowAction('health', 'update', id, f, v)}
-        onAdd={() => handleRowAction('health', 'add')}
-        onRemove={(id) => handleRowAction('health', 'remove', id)}
-      />
-
-      <OcularTable 
-        rows={ocularRows} options={options} 
-        onRowChange={(id, f, v) => handleRowAction('ocular', 'update', id, f, v)}
-        onAdd={() => handleRowAction('ocular', 'add')}
-        onRemove={(id) => handleRowAction('ocular', 'remove', id)}
-      />
+      <GeneralTable rows={generalDataRows} options={options} onRowChange={(id, f, v) => handleRowAction('general', 'update', id, f, v)} onAdd={() => handleRowAction('general', 'add')} onRemove={(id) => handleRowAction('general', 'remove', id)} />
+      <HealthTable rows={healthConditionRows} options={options} onRowChange={(id, f, v) => handleRowAction('health', 'update', id, f, v)} onAdd={() => handleRowAction('health', 'add')} onRemove={(id) => handleRowAction('health', 'remove', id)} />
+      <OcularTable rows={ocularRows} options={options} onRowChange={(id, f, v) => handleRowAction('ocular', 'update', id, f, v)} onAdd={() => handleRowAction('ocular', 'add')} onRemove={(id) => handleRowAction('ocular', 'remove', id)} />
 
       <div className="p-6 mb-8 glass-panel rounded-2xl">
          <h2 className="flex items-center gap-2 pb-2 mb-4 text-xl font-bold border-b border-white/10"><FaPills className="text-blue-400"/> Current Medications</h2>
@@ -293,13 +304,10 @@ const AddBill = () => {
         eomRows={eomRows} onEomChange={(id, f, v) => handleRowAction('eom', 'update', id, f, v)} onEomAdd={() => handleRowAction('eom', 'add')} onEomRemove={(id) => handleRowAction('eom', 'remove', id)}
       />
 
-      <PupilTable 
-        pupilRows={pupilRows} 
-        onPupilChange={(id, f, v) => handleRowAction('pupil', 'update', id, f, v)} 
-        onPupilAdd={() => handleRowAction('pupil', 'add')} 
-        onPupilRemove={(id) => handleRowAction('pupil', 'remove', id)} 
-        options={options}
-      />
+      <PupilTable pupilRows={pupilRows} onPupilChange={(id, f, v) => handleRowAction('pupil', 'update', id, f, v)} onPupilAdd={() => handleRowAction('pupil', 'add')} onPupilRemove={(id) => handleRowAction('pupil', 'remove', id)} options={options} />
+      <LacrimalTable lacrimal={lacrimal} onLacrimalChange={handleLacrimalChange} />
+      <LidLashConjunctivaTable data={lidLash} onChange={handleLidLashChange} />
+      <CorneaACTable data={corneaAC} onChange={handleCorneaACChange} />
 
       <div className="flex justify-end pt-4 pb-20">
         <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-8 py-3 font-bold text-white transition-all transform shadow-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl shadow-blue-900/50 active:scale-95 disabled:opacity-50 disabled:scale-100">
