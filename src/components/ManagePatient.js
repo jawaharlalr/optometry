@@ -3,6 +3,53 @@ import { db } from '../firebase';
 import { collection, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { FaTrash, FaEye, FaEdit, FaSave, FaTimes, FaSearch, FaUserMd } from 'react-icons/fa';
 
+// --- HELPER: Dynamically calculate age based on DOB ---
+const calculateAge = (dobString) => {
+  if (!dobString) return '';
+  const birthDate = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  // Adjust if birthday hasn't occurred yet this year
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age >= 0 ? age : 0;
+};
+
+// --- HELPER COMPONENT (Moved OUTSIDE to prevent focus loss during typing) ---
+const DetailRow = ({ label, name, type = "text", value, editable = true, maxLength, isEditing, onChange }) => (
+  <div className="flex flex-col py-3 border-b md:flex-row md:items-center border-white/10 last:border-0">
+    <span className="w-32 text-xs font-semibold tracking-wider text-blue-300 uppercase">{label}:</span>
+    {isEditing ? (
+      editable && name !== 'mrNo' ? ( 
+        // Editable Input
+        <input 
+          type={type}
+          name={name}
+          value={value || ''}
+          onChange={onChange}
+          maxLength={maxLength}
+          className="flex-1 px-3 py-1 text-white border rounded outline-none bg-white/10 border-white/20 focus:ring-2 focus:ring-blue-500"
+        />
+      ) : (
+        // Read-Only Input for DOB, Age, Gender, MR No
+        <input 
+          type={type}
+          name={name}
+          value={value || ''}
+          readOnly
+          title={`${label} is non-editable`}
+          className="flex-1 px-3 py-1 border rounded cursor-not-allowed bg-black/40 text-white/50 border-white/5 focus:outline-none"
+        />
+      )
+    ) : (
+      // View Mode Display
+      <span className="flex-1 font-medium text-white">{value || '-'}</span>
+    )}
+  </div>
+);
+
 // --- SUB-COMPONENT: Patient Details Modal ---
 const PatientModal = ({ patient, onClose, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -11,7 +58,13 @@ const PatientModal = ({ patient, onClose, onUpdate }) => {
 
   // Update local form data when input changes
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Specifically handle phone to strictly allow numbers only
+    if (name === 'phone') {
+      setFormData({ ...formData, [name]: value.replace(/\D/g, '') });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   // Handle Save Logic
@@ -21,16 +74,6 @@ const PatientModal = ({ patient, onClose, onUpdate }) => {
       const patientRef = doc(db, "patients", patient.id);
       // Remove 'id' from data before sending to Firestore
       const { id, ...dataToUpdate } = formData; 
-      
-      // Auto-recalculate age if DOB changed (optional safety)
-      if (dataToUpdate.dob) {
-        const birthDate = new Date(dataToUpdate.dob);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-        dataToUpdate.age = age;
-      }
 
       await updateDoc(patientRef, dataToUpdate);
       onUpdate(formData); // Update parent state
@@ -43,32 +86,14 @@ const PatientModal = ({ patient, onClose, onUpdate }) => {
     }
   };
 
-  // Helper to render a field line
-  const DetailRow = ({ label, name, type = "text", value }) => (
-    <div className="flex flex-col md:flex-row md:items-center py-3 border-b border-white/10 last:border-0">
-      <span className="text-blue-300 font-semibold w-32 uppercase text-xs tracking-wider">{label}:</span>
-      {isEditing && name !== 'mrNo' ? ( // Prevent editing MR No
-        <input 
-          type={type}
-          name={name}
-          value={value}
-          onChange={handleChange}
-          className="flex-1 bg-white/10 border border-white/20 rounded px-3 py-1 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      ) : (
-        <span className="text-white flex-1 font-medium">{value || '-'}</span>
-      )}
-    </div>
-  );
-
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl animate-fade-in">
+      <div className="glass-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl animate-fade-in custom-scrollbar">
         
         {/* Modal Header */}
-        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-blue-600/20">
+        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-blue-600/20">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-500 p-2 rounded-lg text-white">
+            <div className="p-2 text-white bg-blue-500 rounded-lg">
                <FaUserMd />
             </div>
             <div>
@@ -78,32 +103,34 @@ const PatientModal = ({ patient, onClose, onUpdate }) => {
               <p className="text-xs text-blue-200">{formData.mrNo}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/70 hover:text-white p-2 hover:bg-white/10 rounded-full transition">
+          <button onClick={onClose} className="p-2 transition rounded-full text-white/70 hover:text-white hover:bg-white/10">
             <FaTimes size={20} />
           </button>
         </div>
 
         {/* Modal Body */}
         <div className="p-6 space-y-2">
-           <DetailRow label="MR Number" name="mrNo" value={formData.mrNo} />
-           <DetailRow label="Full Name" name="name" value={formData.name} />
-           <DetailRow label="Phone" name="phone" type="tel" value={formData.phone} />
-           <DetailRow label="Gender" name="gender" value={formData.gender} />
-           <DetailRow label="DOB" name="dob" type="date" value={formData.dob} />
-           <DetailRow label="Age" name="age" type="number" value={formData.age} />
+           <DetailRow label="MR Number" name="mrNo" value={formData.mrNo} editable={false} isEditing={isEditing} onChange={handleChange} />
+           <DetailRow label="Full Name" name="name" value={formData.name} editable={true} isEditing={isEditing} onChange={handleChange} />
+           <DetailRow label="Phone" name="phone" type="tel" value={formData.phone} editable={true} maxLength={10} isEditing={isEditing} onChange={handleChange} />
+           
+           {/* These fields are non-editable */}
+           <DetailRow label="Gender" name="gender" value={formData.gender} editable={false} isEditing={isEditing} onChange={handleChange} />
+           <DetailRow label="DOB" name="dob" type="date" value={formData.dob} editable={false} isEditing={isEditing} onChange={handleChange} />
+           <DetailRow label="Age" name="age" type="number" value={formData.age} editable={false} isEditing={isEditing} onChange={handleChange} />
            
            <div className="flex flex-col py-3">
-              <span className="text-blue-300 font-semibold uppercase text-xs tracking-wider mb-2">Address:</span>
+              <span className="mb-2 text-xs font-semibold tracking-wider text-blue-300 uppercase">Address:</span>
               {isEditing ? (
                 <textarea 
                   name="address" 
                   value={formData.address} 
                   onChange={handleChange}
                   rows="3"
-                  className="w-full bg-white/10 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-white border rounded outline-none bg-white/10 border-white/20 focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
-                <p className="text-white/90 bg-white/5 p-3 rounded-lg border border-white/5">
+                <p className="p-3 border rounded-lg text-white/90 bg-white/5 border-white/5">
                   {formData.address || 'No address provided.'}
                 </p>
               )}
@@ -111,19 +138,19 @@ const PatientModal = ({ patient, onClose, onUpdate }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-6 border-t border-white/10 bg-black/20 flex justify-end gap-3">
+        <div className="flex justify-end gap-3 p-6 border-t border-white/10 bg-black/20">
           {isEditing ? (
             <>
               <button 
                 onClick={() => { setIsEditing(false); setFormData(patient); }} 
-                className="px-4 py-2 rounded-xl text-sm text-red-300 hover:bg-white/5 transition"
+                className="px-4 py-2 text-sm text-red-300 transition rounded-xl hover:bg-white/5"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSave} 
                 disabled={saving}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl flex items-center gap-2 shadow-lg transition"
+                className="flex items-center gap-2 px-6 py-2 text-white transition bg-green-500 shadow-lg hover:bg-green-600 rounded-xl disabled:opacity-50"
               >
                 {saving ? 'Saving...' : <><FaSave /> Save Changes</>}
               </button>
@@ -131,7 +158,7 @@ const PatientModal = ({ patient, onClose, onUpdate }) => {
           ) : (
             <button 
               onClick={() => setIsEditing(true)} 
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-xl flex items-center gap-2 shadow-lg transition"
+              className="flex items-center gap-2 px-6 py-2 text-white transition bg-blue-500 shadow-lg hover:bg-blue-600 rounded-xl"
             >
               <FaEdit /> Edit Details
             </button>
@@ -158,10 +185,15 @@ const ManagePatient = () => {
   const fetchPatients = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "patients"));
-      const patientsList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const patientsList = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Calculate exact age dynamically on fetch based on stored DOB
+          age: data.dob ? calculateAge(data.dob) : data.age 
+        };
+      });
       setPatients(patientsList);
       setFilteredPatients(patientsList);
     } catch (error) {
@@ -175,7 +207,8 @@ const ManagePatient = () => {
   useEffect(() => {
     const results = patients.filter(patient => 
       patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.mrNo?.toLowerCase().includes(searchTerm.toLowerCase())
+      patient.mrNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.phone?.includes(searchTerm)
     );
     setFilteredPatients(results);
   }, [searchTerm, patients]);
@@ -200,60 +233,60 @@ const ManagePatient = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 w-full h-full overflow-y-auto custom-scrollbar relative">
+    <div className="relative w-full h-full p-4 overflow-y-auto md:p-8 custom-scrollbar">
       
       {/* Header & Search */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col items-start justify-between gap-4 mb-8 md:flex-row md:items-center">
         <div>
           <h2 className="text-3xl font-bold text-white">Manage Patients</h2>
-          <p className="text-blue-200 text-sm">View, Edit, or Delete patient records.</p>
+          <p className="text-sm text-blue-200">View, Edit, or Delete patient records.</p>
         </div>
         
         {/* Search Bar */}
         <div className="relative w-full md:w-72 group">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-300">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-300 pointer-events-none">
             <FaSearch />
           </div>
           <input
             type="text"
-            placeholder="Search Name or MR No..."
+            placeholder="Search Name, Phone or MR No..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 text-white rounded-xl pl-10 p-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+            className="w-full p-2.5 pl-10 text-white transition-all border outline-none bg-white/5 border-white/10 rounded-xl focus:ring-2 focus:ring-blue-400"
           />
         </div>
       </div>
 
       {/* Table Container */}
-      <div className="glass-panel rounded-2xl overflow-hidden flex flex-col h-[calc(100vh-200px)]">
+      <div className="flex flex-col overflow-hidden glass-panel rounded-2xl min-h-[400px]">
         {loading ? (
-           <div className="flex-1 flex items-center justify-center text-blue-200">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mr-2"></div>
+           <div className="flex items-center justify-center flex-1 text-blue-200">
+              <div className="w-8 h-8 mr-2 border-b-2 border-white rounded-full animate-spin"></div>
               Loading Records...
            </div>
         ) : filteredPatients.length === 0 ? (
-           <div className="flex-1 flex flex-col items-center justify-center text-blue-300 opacity-60">
+           <div className="flex flex-col items-center justify-center flex-1 text-blue-300 opacity-60">
               <FaUserMd size={48} className="mb-2" />
               <p>No patients found.</p>
            </div>
         ) : (
           <div className="overflow-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-blue-900/40 text-blue-200 uppercase text-xs font-semibold sticky top-0 backdrop-blur-md z-10">
+              <thead className="sticky top-0 z-10 text-xs font-semibold tracking-wide text-blue-200 uppercase backdrop-blur-md bg-blue-900/40">
                 <tr>
-                  <th className="p-4 w-16 text-center">S.No</th>
+                  <th className="w-16 p-4 text-center">S.No</th>
                   <th className="p-4">MR Number</th>
                   <th className="p-4">Patient Name</th>
-                  <th className="p-4 text-center w-32">Actions</th>
+                  <th className="w-32 p-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filteredPatients.map((patient, index) => (
-                  <tr key={patient.id} className="hover:bg-white/5 transition-colors group">
-                    <td className="p-4 text-center text-blue-300/70 font-mono text-sm">
+                  <tr key={patient.id} className="transition-colors hover:bg-white/5 group">
+                    <td className="p-4 font-mono text-sm text-center text-blue-300/70">
                       {index + 1}
                     </td>
-                    <td className="p-4 text-white font-medium">
+                    <td className="p-4 font-medium text-white">
                       {patient.mrNo}
                     </td>
                     <td className="p-4 text-blue-100">
@@ -264,14 +297,14 @@ const ManagePatient = () => {
                       <div className="flex items-center justify-center gap-2">
                         <button 
                           onClick={() => setSelectedPatient(patient)}
-                          className="p-2 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500 hover:text-white transition-all shadow-sm"
-                          title="View Details"
+                          className="p-2 text-blue-300 transition-all rounded-lg shadow-sm bg-blue-500/20 hover:bg-blue-500 hover:text-white"
+                          title="View/Edit Details"
                         >
                           <FaEye size={16} />
                         </button>
                         <button 
                           onClick={() => handleDelete(patient.id)}
-                          className="p-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                          className="p-2 text-red-300 transition-all rounded-lg shadow-sm bg-red-500/20 hover:bg-red-500 hover:text-white"
                           title="Delete Record"
                         >
                           <FaTrash size={14} />

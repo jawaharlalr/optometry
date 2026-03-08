@@ -19,6 +19,9 @@ import {
   FaBirthdayCake
 } from 'react-icons/fa';
 
+// ---> NEW: Import the PDF Generator <---
+import { generateBillPDF } from '../utils/generatePDF'; 
+
 // --- Sub-Component: Bill Details Modal ---
 const BillModal = ({ bill, onClose }) => {
   if (!bill) return null;
@@ -43,12 +46,12 @@ const BillModal = ({ bill, onClose }) => {
     if (!data || data.length === 0) return null;
     return (
       <div className="mb-6">
-        <h4 className="flex items-center gap-2 text-blue-300 font-bold mb-3 border-b border-white/10 pb-2 text-sm uppercase tracking-wide">
+        <h4 className="flex items-center gap-2 pb-2 mb-3 text-sm font-bold tracking-wide text-blue-300 uppercase border-b border-white/10">
           {icon} {title}
         </h4>
-        <div className="overflow-x-auto bg-white/5 rounded-xl border border-white/10">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-black/20 text-blue-200">
+        <div className="overflow-x-auto border bg-white/5 rounded-xl border-white/10">
+          <table className="w-full text-sm text-left">
+            <thead className="text-blue-200 bg-black/20">
               <tr>
                 {columns.map((col, idx) => (
                   <th key={idx} className="p-3 font-semibold whitespace-nowrap">{col}</th>
@@ -57,7 +60,7 @@ const BillModal = ({ bill, onClose }) => {
             </thead>
             <tbody className="divide-y divide-white/5 text-white/90">
               {data.map((row, idx) => (
-                <tr key={idx} className="hover:bg-white/5">
+                <tr key={idx} className="transition-colors hover:bg-white/5">
                   {title === 'General Data' && (
                     <>
                       <td className="p-3">{row.eye}</td>
@@ -105,37 +108,37 @@ const BillModal = ({ bill, onClose }) => {
       <div className="glass-panel w-full max-w-5xl max-h-[95vh] overflow-hidden rounded-2xl flex flex-col border border-white/20 shadow-2xl">
         
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-gradient-to-r from-blue-900/40 to-blue-800/40">
+        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-blue-900/40 to-blue-800/40">
           <div>
-            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-2xl font-bold text-white">
               <FaFileInvoiceDollar className="text-blue-400"/> Medical Bill Details
             </h3>
-            <p className="text-blue-200 text-xs mt-1 flex items-center gap-2">
+            <p className="flex items-center gap-2 mt-1 text-xs text-blue-200">
               <FaCalendarAlt /> Generated on: {formatDate(bill.createdAt)}
             </p>
           </div>
-          <button onClick={onClose} className="text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"><FaTimes size={20} /></button>
+          <button onClick={onClose} className="p-2 transition-all rounded-full text-white/70 hover:text-white bg-white/10 hover:bg-white/20"><FaTimes size={20} /></button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+        <div className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
           
           {/* --- FULL PATIENT DETAILS CARD --- */}
-          <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
-            <h4 className="text-blue-300 font-bold mb-4 uppercase text-xs tracking-wider border-b border-white/5 pb-2">Patient Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 border bg-white/5 border-white/10 rounded-2xl">
+            <h4 className="pb-2 mb-4 text-xs font-bold tracking-wider text-blue-300 uppercase border-b border-white/5">Patient Information</h4>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               
               {/* Column 1: Identity */}
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="bg-blue-500/20 p-2 rounded-lg text-blue-300"><FaUser /></div>
+                  <div className="p-2 text-blue-300 rounded-lg bg-blue-500/20"><FaUser /></div>
                   <div>
                     <p className="text-xs text-blue-400">Name</p>
-                    <p className="font-bold text-white text-lg">{pName}</p>
+                    <p className="text-lg font-bold text-white">{pName}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-purple-500/20 p-2 rounded-lg text-purple-300 font-mono text-sm">MR</div>
+                  <div className="p-2 font-mono text-sm text-purple-300 rounded-lg bg-purple-500/20">MR</div>
                   <div>
                     <p className="text-xs text-blue-400">MR Number</p>
                     <p className="font-mono text-white">{pMR}</p>
@@ -155,17 +158,17 @@ const BillModal = ({ bill, onClose }) => {
                 </div>
                 <div className="flex items-center gap-3">
                   <FaPhone className="text-blue-500/50" />
-                  <span className="text-white font-mono">{pPhone}</span>
+                  <span className="font-mono text-white">{pPhone}</span>
                 </div>
               </div>
 
               {/* Column 3: Address */}
               <div>
                  <div className="flex items-start gap-2">
-                    <FaMapMarkerAlt className="text-red-400 mt-1" />
+                    <FaMapMarkerAlt className="mt-1 text-red-400" />
                     <div>
-                      <p className="text-xs text-blue-400 mb-1">Address</p>
-                      <p className="text-sm text-white/80 leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">
+                      <p className="mb-1 text-xs text-blue-400">Address</p>
+                      <p className="p-3 text-sm leading-relaxed border rounded-lg text-white/80 bg-black/20 border-white/5">
                         {pAddress}
                       </p>
                     </div>
@@ -179,12 +182,12 @@ const BillModal = ({ bill, onClose }) => {
           <div>
             <SectionTable title="General Data" icon={<FaEyeIcon />} columns={['Eye', 'Complaint', 'Glass', 'Duration', 'Distance']} data={bill.generalData || bill.generalDataSnapshot} />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <SectionTable title="Health Conditions" icon={<FaNotesMedical />} columns={['Condition', 'Duration', 'Inv.']} data={bill.healthConditions || bill.healthDataSnapshot} />
               <SectionTable title="Ocular History" icon={<FaEyeIcon />} columns={['Eye', 'Condition', 'Duration', 'Inv.']} data={bill.ocularHistory} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <SectionTable title="Medications" icon={<FaPills />} columns={['Medication Name']} data={bill.medications} />
               <SectionTable title="Birth History" icon={<FaBaby />} columns={['History', 'Allergies']} data={bill.birthHistory} />
             </div>
@@ -193,9 +196,17 @@ const BillModal = ({ bill, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 bg-black/30 flex justify-end gap-3">
-          <button onClick={onClose} className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all">Close</button>
-          <button className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-lg transition-all flex items-center gap-2"><FaFileInvoiceDollar /> Print Bill</button>
+        <div className="flex justify-end gap-3 p-4 border-t border-white/10 bg-black/30">
+          <button onClick={onClose} className="px-6 py-2 text-white transition-all bg-white/10 hover:bg-white/20 rounded-xl">Close</button>
+          
+          {/* ---> UPDATED: Trigger PDF Download onClick <--- */}
+          <button 
+            onClick={() => generateBillPDF(bill)} 
+            className="flex items-center gap-2 px-6 py-2 text-white transition-all bg-blue-600 shadow-lg hover:bg-blue-500 rounded-xl"
+          >
+            <FaFileInvoiceDollar /> Print Bill
+          </button>
+
         </div>
       </div>
     </div>
@@ -242,14 +253,14 @@ const ManageBill = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 w-full h-full overflow-y-auto custom-scrollbar">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+    <div className="w-full h-full p-4 overflow-y-auto md:p-8 custom-scrollbar">
+      <div className="flex flex-col items-center justify-between gap-4 mb-8 md:flex-row">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-500 p-3 rounded-xl shadow-lg text-white"><FaFileInvoiceDollar size={24} /></div>
-          <div><h2 className="text-2xl md:text-3xl font-bold text-white">Manage Bills</h2><p className="text-blue-200 text-sm">View patient invoices.</p></div>
+          <div className="p-3 text-white bg-blue-500 shadow-lg rounded-xl"><FaFileInvoiceDollar size={24} /></div>
+          <div><h2 className="text-2xl font-bold text-white md:text-3xl">Manage Bills</h2><p className="text-sm text-blue-200">View patient invoices.</p></div>
         </div>
         <div className="relative w-full md:w-72">
-          <FaSearch className="absolute left-3 top-3 text-blue-300" />
+          <FaSearch className="absolute text-blue-300 left-3 top-3" />
           <input type="text" placeholder="Search MR No or Name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white/5 border border-white/10 text-white rounded-xl pl-10 p-2.5 focus:outline-none focus:border-blue-400" />
         </div>
       </div>
@@ -257,44 +268,44 @@ const ManageBill = () => {
       <div className="glass-panel rounded-2xl overflow-hidden min-h-[400px]">
         {loading ? <div className="p-10 text-center text-blue-200">Loading...</div> : 
          filteredBills.length === 0 ? <div className="p-20 text-center text-blue-300 opacity-60">No bills found.</div> : (
-          <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-blue-900/40 text-blue-200 text-xs uppercase font-semibold sticky top-0 backdrop-blur-md">
-                  <tr><th className="p-4 w-16 text-center">S.No</th><th className="p-4">Date</th><th className="p-4">MR No</th><th className="p-4">Patient Name</th><th className="p-4 text-center w-40">Actions</th></tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {filteredBills.map((bill, index) => (
-                    <tr key={bill.id} className="hover:bg-white/5 transition-colors group">
-                      <td className="p-4 text-center text-blue-300/70 font-mono text-sm">{index + 1}</td>
-                      <td className="p-4 text-white text-sm">{bill.createdAt?.toDate ? bill.createdAt.toDate().toLocaleDateString() : 'N/A'}</td>
-                      <td className="p-4 text-blue-200 font-mono text-sm">{bill.normalizedMR}</td>
-                      <td className="p-4 text-white font-medium">{bill.normalizedName}</td>
-                      <td className="p-4 flex justify-center gap-2">
-                        <button onClick={() => setSelectedBill(bill)} className="p-2 bg-blue-500/20 text-blue-300 hover:text-white rounded-lg"><FaEye /></button>
-                        <button onClick={() => handleDelete(bill.id)} className="p-2 bg-red-500/20 text-red-300 hover:text-white rounded-lg"><FaTrash /></button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="md:hidden space-y-4 p-4">
-              {filteredBills.map((bill, index) => (
-                <div key={bill.id} className="bg-white/5 border border-white/10 rounded-xl p-4 relative">
-                  <div className="flex justify-between items-start mb-2">
-                    <div><h3 className="font-bold text-white text-lg">{bill.normalizedName}</h3><span className="text-blue-300 text-xs font-mono bg-blue-900/40 px-2 py-0.5 rounded">MR: {bill.normalizedMR}</span></div>
-                    <span className="text-blue-500/50 text-xs font-bold">#{index + 1}</span>
-                  </div>
-                  <div className="text-sm text-blue-200/70 mb-4 flex items-center gap-2"><FaCalendarAlt size={12}/> {bill.createdAt?.toDate ? bill.createdAt.toDate().toLocaleDateString() : 'N/A'}</div>
-                  <div className="flex gap-2 border-t border-white/5 pt-3">
-                    <button onClick={() => setSelectedBill(bill)} className="flex-1 flex items-center justify-center gap-2 bg-blue-500/20 text-blue-300 py-2 rounded-lg"><FaEye /> View</button>
-                    <button onClick={() => handleDelete(bill.id)} className="flex-1 flex items-center justify-center gap-2 bg-red-500/20 text-red-300 py-2 rounded-lg"><FaTrash /> Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
+         <>
+           <div className="hidden overflow-x-auto md:block">
+             <table className="w-full text-left border-collapse">
+               <thead className="sticky top-0 text-xs font-semibold text-blue-200 uppercase bg-blue-900/40 backdrop-blur-md">
+                 <tr><th className="w-16 p-4 text-center">S.No</th><th className="p-4">Date</th><th className="p-4">MR No</th><th className="p-4">Patient Name</th><th className="w-40 p-4 text-center">Actions</th></tr>
+               </thead>
+               <tbody className="divide-y divide-white/5">
+                 {filteredBills.map((bill, index) => (
+                   <tr key={bill.id} className="transition-colors hover:bg-white/5 group">
+                     <td className="p-4 font-mono text-sm text-center text-blue-300/70">{index + 1}</td>
+                     <td className="p-4 text-sm text-white">{bill.createdAt?.toDate ? bill.createdAt.toDate().toLocaleDateString() : 'N/A'}</td>
+                     <td className="p-4 font-mono text-sm text-blue-200">{bill.normalizedMR}</td>
+                     <td className="p-4 font-medium text-white">{bill.normalizedName}</td>
+                     <td className="flex justify-center gap-2 p-4">
+                       <button onClick={() => setSelectedBill(bill)} className="p-2 text-blue-300 rounded-lg bg-blue-500/20 hover:text-white"><FaEye /></button>
+                       <button onClick={() => handleDelete(bill.id)} className="p-2 text-red-300 rounded-lg bg-red-500/20 hover:text-white"><FaTrash /></button>
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+           <div className="p-4 space-y-4 md:hidden">
+             {filteredBills.map((bill, index) => (
+               <div key={bill.id} className="relative p-4 border bg-white/5 border-white/10 rounded-xl">
+                 <div className="flex items-start justify-between mb-2">
+                   <div><h3 className="text-lg font-bold text-white">{bill.normalizedName}</h3><span className="text-blue-300 text-xs font-mono bg-blue-900/40 px-2 py-0.5 rounded">MR: {bill.normalizedMR}</span></div>
+                   <span className="text-xs font-bold text-blue-500/50">#{index + 1}</span>
+                 </div>
+                 <div className="flex items-center gap-2 mb-4 text-sm text-blue-200/70"><FaCalendarAlt size={12}/> {bill.createdAt?.toDate ? bill.createdAt.toDate().toLocaleDateString() : 'N/A'}</div>
+                 <div className="flex gap-2 pt-3 border-t border-white/5">
+                   <button onClick={() => setSelectedBill(bill)} className="flex items-center justify-center flex-1 gap-2 py-2 text-blue-300 rounded-lg bg-blue-500/20"><FaEye /> View</button>
+                   <button onClick={() => handleDelete(bill.id)} className="flex items-center justify-center flex-1 gap-2 py-2 text-red-300 rounded-lg bg-red-500/20"><FaTrash /> Delete</button>
+                 </div>
+               </div>
+             ))}
+           </div>
+         </>
         )}
       </div>
       {selectedBill && <BillModal bill={selectedBill} onClose={() => setSelectedBill(null)} />}

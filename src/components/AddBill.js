@@ -11,7 +11,8 @@ import {
   FaPlus,
   FaTrash,
   FaPills,
-  FaBaby
+  FaBaby,
+  FaClipboardList 
 } from 'react-icons/fa';
 
 // Import Table Components
@@ -23,7 +24,10 @@ import CoverTestEOMTable from './tables/CoverTestEOMTable';
 import PupilTable from './tables/PupilTable';
 import LacrimalTable from './tables/LacrimalTable';
 import LidLashConjunctivaTable from './tables/LidLashConjunctivaTable';
-import CorneaACTable from './tables/CorneaACTable'; // <-- NEW IMPORT
+import CorneaACTable from './tables/CorneaACTable'; 
+import IrisLensTable from './tables/IrisLensTable';
+import ColourDryEyeTable from './tables/ColourDryEyeTable';
+import IOPTable from './tables/IOPTable'; 
 import { TableInput } from './common/TableComponents';
 
 const AddBill = () => {
@@ -34,6 +38,9 @@ const AddBill = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // ---> Purpose of Visit State
+  const [purposeOfVisit, setPurposeOfVisit] = useState('');
 
   // ... Option State
   const [options, setOptions] = useState({
@@ -91,13 +98,27 @@ const AddBill = () => {
     conjunctivaOd: 'Normal', conjunctivaOs: 'Normal'
   });
 
-  // --- CORNEA / AC STATE (NEW) ---
   const [corneaAC, setCorneaAC] = useState({
     scleraOd: 'Normal', scleraOdText: '', scleraOs: 'Normal', scleraOsText: '',
     corneaOd: 'Normal', corneaOdText: '', corneaOs: 'Normal', corneaOsText: '',
     acDepthOd: 'Normal', acDepthOdText: '', acDepthOs: 'Normal', acDepthOsText: '',
-    vonHerickOd: '', vonHerickOdText: '', vonHerickOs: '', vonHerickOsText: '', // No 'Normal' default
+    vonHerickOd: '', vonHerickOdText: '', vonHerickOs: '', vonHerickOsText: '', 
     tmPigmentOd: 'Normal', tmPigmentOdText: '', tmPigmentOs: 'Normal', tmPigmentOsText: ''
+  });
+
+  const [irisLens, setIrisLens] = useState({
+    irisOd: 'Normal', irisOdText: '', irisOs: 'Normal', irisOsText: '',
+    lensOd: 'Clear', lensOdText: '', lensOs: 'Clear', lensOsText: ''
+  });
+
+  const [colourDryEye, setColourDryEye] = useState({
+    ishiharaOd: '', ishiharaOs: '',
+    tbutOd: '', tbutOs: '',
+    schirmerOd: '', schirmerOs: ''
+  });
+
+  const [iopData, setIopData] = useState({
+    iopOd: '', iopOs: '', iopTime: ''
   });
 
   // ... Search Logic
@@ -117,8 +138,8 @@ const AddBill = () => {
         } catch (error) { console.error(error); } 
         finally { setLoading(false); }
       } else {
-        setSearchResults([]);
-        setShowDropdown(false);
+        searchResults.length && setSearchResults([]);
+        showDropdown && setShowDropdown(false);
       }
     }, 500);
     return () => clearTimeout(delayDebounceFn);
@@ -134,8 +155,9 @@ const AddBill = () => {
     setSelectedPatient(null);
     setSearchTerm('');
     setSearchResults([]);
+    setPurposeOfVisit(''); 
     
-    // Optional: Reset fixed forms
+    // Reset fixed forms
     setLacrimal({ roplasOd: '', roplasOs: '' });
     setLidLash({ lidsOd: 'Normal', lidsOs: 'Normal', lashOd: 'Normal', lashOs: 'Normal', conjunctivaOd: 'Normal', conjunctivaOs: 'Normal' });
     setCorneaAC({
@@ -144,6 +166,18 @@ const AddBill = () => {
       acDepthOd: 'Normal', acDepthOdText: '', acDepthOs: 'Normal', acDepthOsText: '',
       vonHerickOd: '', vonHerickOdText: '', vonHerickOs: '', vonHerickOsText: '',
       tmPigmentOd: 'Normal', tmPigmentOdText: '', tmPigmentOs: 'Normal', tmPigmentOsText: ''
+    });
+    setIrisLens({
+      irisOd: 'Normal', irisOdText: '', irisOs: 'Normal', irisOsText: '',
+      lensOd: 'Clear', lensOdText: '', lensOs: 'Clear', lensOsText: ''
+    });
+    setColourDryEye({
+      ishiharaOd: '', ishiharaOs: '',
+      tbutOd: '', tbutOs: '',
+      schirmerOd: '', schirmerOs: ''
+    });
+    setIopData({
+      iopOd: '', iopOs: '', iopTime: ''
     });
   };
 
@@ -183,12 +217,26 @@ const AddBill = () => {
     setCorneaAC(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleIrisLensChange = (field, value) => {
+    setIrisLens(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleColourDryEyeChange = (field, value) => {
+    setColourDryEye(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleIopChange = (field, value) => {
+    setIopData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // ---> UPDATED: Save and ask for PDF <---
   const handleSave = async () => {
     if (!selectedPatient) return alert("Select a patient first.");
     setSaving(true);
     try {
-      await addDoc(collection(db, "bills"), {
+      const docRef = await addDoc(collection(db, "bills"), {
         patient: selectedPatient,
+        purposeOfVisit: purposeOfVisit, 
         generalData: generalDataRows,
         healthConditions: healthConditionRows,
         ocularHistory: ocularRows,
@@ -206,14 +254,30 @@ const AddBill = () => {
         pupil: pupilRows,
         lacrimalWorkup: lacrimal,
         lidLashConjunctiva: lidLash,
-        corneaAnteriorChamber: corneaAC, // Saved new table
+        corneaAnteriorChamber: corneaAC, 
+        irisLens: irisLens, 
+        colourDryEye: colourDryEye, 
+        iop: iopData, 
         
         createdAt: serverTimestamp()
       });
-      alert("Bill Saved Successfully!");
+
+      // Prompt user for PDF generation
+      const wantPdf = window.confirm("Bill Saved Successfully!\n\nWould you like to generate a PDF for this bill now?");
+      
+      if (wantPdf) {
+        // TODO: Insert your PDF generation or routing logic here. 
+        console.log("Triggering PDF for Bill ID:", docRef.id);
+        alert(`PDF generation logic goes here! (Bill ID: ${docRef.id})`);
+      }
+
       handleClearPatient();
-    } catch (e) { alert("Error saving bill."); }
-    finally { setSaving(false); }
+    } catch (e) { 
+      console.error(e);
+      alert("Error saving bill."); 
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   return (
@@ -259,6 +323,21 @@ const AddBill = () => {
                  <button onClick={handleClearPatient} className="flex items-center gap-2 px-4 py-2 text-sm text-white transition-all border bg-white/10 hover:bg-red-500/20 hover:text-red-200 rounded-xl border-white/5 hover:border-red-500/30"><FaTimes /> Change Patient</button>
              </div>
          )}
+      </div>
+
+      {/* Purpose of Visit Section */}
+      <div className="p-6 mb-8 glass-panel rounded-2xl">
+         <h2 className="flex items-center gap-2 pb-2 mb-4 text-xl font-bold border-b border-white/10">
+           <FaClipboardList className="text-blue-400"/> Purpose of Visit
+         </h2>
+         <div className="flex items-center px-4 py-3 transition-all border bg-white/5 border-white/10 rounded-xl focus-within:border-blue-400">
+           <input 
+              className="flex-1 text-white bg-transparent outline-none placeholder-blue-300/50" 
+              placeholder="Enter purpose of visit (e.g., Routine Checkup, Eye Pain, Follow-up)..." 
+              value={purposeOfVisit} 
+              onChange={e => setPurposeOfVisit(e.target.value)} 
+           />
+         </div>
       </div>
 
       <GeneralTable rows={generalDataRows} options={options} onRowChange={(id, f, v) => handleRowAction('general', 'update', id, f, v)} onAdd={() => handleRowAction('general', 'add')} onRemove={(id) => handleRowAction('general', 'remove', id)} />
@@ -308,6 +387,9 @@ const AddBill = () => {
       <LacrimalTable lacrimal={lacrimal} onLacrimalChange={handleLacrimalChange} />
       <LidLashConjunctivaTable data={lidLash} onChange={handleLidLashChange} />
       <CorneaACTable data={corneaAC} onChange={handleCorneaACChange} />
+      <IrisLensTable data={irisLens} onChange={handleIrisLensChange} />
+      <ColourDryEyeTable data={colourDryEye} onChange={handleColourDryEyeChange} />
+      <IOPTable data={iopData} onChange={handleIopChange} />
 
       <div className="flex justify-end pt-4 pb-20">
         <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-8 py-3 font-bold text-white transition-all transform shadow-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl shadow-blue-900/50 active:scale-95 disabled:opacity-50 disabled:scale-100">
